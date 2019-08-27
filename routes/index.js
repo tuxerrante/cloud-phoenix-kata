@@ -7,11 +7,12 @@ router.get('/', function (req, res, next) {
   res.render('index', {title: 'Express'})
 })
 
-router.get('/crash', function (req, res, next) {
-  console.log(new Error('Requested crash by endpoint /crash'))
-  process.exit(1)
-})
+// router.get('/crash', function (req, res, next) {
+//   console.log(new Error('Requested crash by endpoint /crash'))
+//   process.exit(1)
+// })
 
+// TODO: is not optimized and creates resource consumption peaks
 router.get('/generatecert', function (req, res, next) {
   const keys = pki.rsa.generateKeyPair(2048)
   const cert = pki.createCertificate()

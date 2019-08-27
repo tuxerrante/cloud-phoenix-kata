@@ -1,6 +1,6 @@
 {
   "name": "automation-kata",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
@@ -14,7 +14,8 @@
     "http-errors": "~1.6.2",
     "mongo-morgan": "^2.0.3",
     "morgan": "~1.9.0",
-    "node-forge": "^0.7.5"
+    "node-forge": "^0.7.5",
+    "mongoose":"5.6.11"
   },
   "devDependencies": {
     "chai": "^4.1.2",

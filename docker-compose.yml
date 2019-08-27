@@ -1,0 +1,21 @@
+version: '2'
+
+services:
+  mongo:
+    container_name: mongo
+    restart: always
+    image: 'mongo:3.4.1'
+    volumes:
+      - ./data:/data/db
+    ports:
+      - '27017:27017'
+
+  app:
+    container_name: cloud-phoenix-kata
+    restart: always
+    depends_on:
+      - 'mongo'
+    build: .
+    ports:
+      - '3000:3000'
+

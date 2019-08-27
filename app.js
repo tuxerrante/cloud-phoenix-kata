@@ -5,6 +5,7 @@ const cookieParser = require('cookie-parser')
 const logger = require('morgan')
 const dblogger = require('mongo-morgan')
 
+const mongoose = require('mongoose')
 const indexRouter = require('./routes/index')
 
 const app = express()
@@ -13,9 +14,38 @@ const app = express()
 app.set('views', path.join(__dirname, 'views'))
 app.set('view engine', 'hbs')
 
-app.use(dblogger(process.env.DB_CONNECTION_STRING, 'combined', {
-  collection: 'logs'
-}))
+// -----------------------------------------
+// manage db connection
+
+console.log('> Mongo DB URI: ' + process.env.DB_CONNECTION_STRING)
+
+const options = {
+  autoIndex: false,     // Don't build indexes
+  reconnectTries: 30,   // Retry up to 30 times
+  reconnectInterval: 500, // Reconnect every 500ms
+  poolSize: 10,         // Maintain up to 10 socket connections
+  // If not connected, return errors immediately rather than waiting for reconnect
+  bufferMaxEntries: 0,
+  useNewUrlParser: true
+}
+
+const connectWithRetry = () => {
+  console.log('> MongoDB connection with retry')
+
+  mongoose.connect(process.env.DB_CONNECTION_STRING, options).then(() => {
+    console.log('> MongoDB is connected')
+
+    app.use(dblogger(process.env.DB_CONNECTION_STRING, 'combined', {
+      collection: 'logs'
+    }))
+  }).catch(err => {
+    console.log('> MongoDB connection unsuccessful, retry after 5 seconds.\n ERROR: \n', err)
+    setTimeout(connectWithRetry, 5000)
+  })
+}
+connectWithRetry()
+// -----------------------------------------
+
 app.use(logger('combined'))
 app.use(express.json())
 app.use(express.urlencoded({extended: false}))
@@ -25,12 +55,12 @@ app.use(express.static(path.join(__dirname, 'public')))
 app.use('/', indexRouter)
 
 // catch 404 and forward to error handler
-app.use(function (req, res, next) {
+app.use(function (_req, _res, next) {
   next(createError(404))
 })
 
 // error handler
-app.use(function (err, req, res, next) {
+app.use(function (err, req, res, _next) {
   // set locals, only providing error in development
   res.locals.message = err.message
   res.locals.error = req.app.get('env') === 'development' ? err : {}
