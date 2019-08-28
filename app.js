@@ -1,11 +1,11 @@
+/* eslint-disable no-multi-spaces */
 const createError = require('http-errors')
-const express = require('express')
-const path = require('path')
+const express     = require('express')
+const path        = require('path')
 const cookieParser = require('cookie-parser')
-const logger = require('morgan')
-const dblogger = require('mongo-morgan')
-
-const mongoose = require('mongoose')
+const logger      = require('morgan')
+const dblogger    = require('mongo-morgan')
+const mongoose    = require('mongoose')
 const indexRouter = require('./routes/index')
 
 const app = express()
@@ -16,8 +16,7 @@ app.set('view engine', 'hbs')
 
 // -----------------------------------------
 // manage db connection
-
-console.log('> Mongo DB URI: ' + process.env.DB_CONNECTION_STRING)
+console.log((new Date()).toISOString() + '> Mongo DB URI: ' + process.env.DB_CONNECTION_STRING)
 
 const options = {
   autoIndex: false,     // Don't build indexes
@@ -30,16 +29,16 @@ const options = {
 }
 
 const connectWithRetry = () => {
-  console.log('> MongoDB connection with retry')
+  console.log((new Date()).toISOString() + '> MongoDB connection with retry')
 
   mongoose.connect(process.env.DB_CONNECTION_STRING, options).then(() => {
-    console.log('> MongoDB is connected')
+    console.log((new Date()).toISOString() + '> MongoDB is connected')
 
     app.use(dblogger(process.env.DB_CONNECTION_STRING, 'combined', {
       collection: 'logs'
     }))
   }).catch(err => {
-    console.log('> MongoDB connection unsuccessful, retry after 5 seconds.\n ERROR: \n', err)
+    console.error((new Date()).toISOString() + '> MongoDB connection unsuccessful, retry after 5 seconds.\n ERROR: \n', err)
     setTimeout(connectWithRetry, 5000)
   })
 }

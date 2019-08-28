@@ -1,0 +1,94 @@
+version: "3.7"
+
+services:
+
+  mongo:
+    image: 'mongo:3.4.1'
+    volumes:
+      - ./data:/data/db_2
+    ports:
+      - '27017:27017'
+    networks:
+      - backend
+      - proxy
+      - monitor
+      - default
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 100M
+
+  app:
+    image: alessandroaffinito/node-server:prd
+    depends_on:
+      - 'mongo'
+    ports:
+      - '3000:3000'
+    networks:
+      - backend
+      - default
+      - proxy
+      - monitor
+    labels:
+      - com.df.notify=true
+      - com.df.distribute=true
+      - com.df.servicePath=/app
+      - com.df.port=8080
+      - com.df.alertName.1=mem_limit
+      - com.df.alertIf.1=@service_mem_limit:0.8
+      - com.df.alertFor.1=5m
+      - com.df.alertName.2=resptime
+      - com.df.alertIf.2=sum(rate(http_server_resp_time_bucket{job="phoenix_app_main", le="0.1"}[5m])) / sum(rate(http_server_resp_time_count{job="phoenix_app_main"}[5m])) < 0.99
+      - com.df.alertLabels.2=scale=up,service=phoenix_app_main
+      - com.df.scrapePort=8080
+      - com.df.scaleMin=1
+      - com.df.scaleMax=3
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 200M
+  
+  # fluent:
+  #   image: fluent/fluentd:v0.12.28-onbuild
+  #   args: 'apk --no-cache --update add sudo && \
+  #     sudo -u fluent gem install fluent-plugin-mongo -v 0.7.15 && \
+  #     rm -rf /home/fluent/.gem/ruby/2.3.0/cache/*.gem && sudo -u fluent gem sources -c && \
+  #     apk del sudo build-base ruby-dev && rm -rf /var/cache/apk/*'
+  #   depends_on:
+  #     - mongo
+  #   volumes:
+  #     - ./vol_fluent:/vol_fluent
+  #   ports:
+  #     - '24284:24284'
+  #   networks:
+  #     - backend
+  #   deploy:
+  #     replicas: 1
+  #     restart_policy:
+  #       condition: on-failure
+  #     resources:
+  #       limits:
+  #         cpus: "0.1"
+  #         memory: 20M
+
+networks:
+  proxy:
+    external: true
+  monitor:
+    external: true
+  backend:
+  default:
+    external: false
+
+volumes:
+  data:

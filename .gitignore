@@ -110,5 +110,10 @@ typings/
 # next.js build output
 .next
 
-# db persistence
+# certificate
+cert/
+
+# ---- Docker files ----
+builds
+# volumes
 data/

@@ -1,12 +1,13 @@
 #!/usr/bin/env node
+/* eslint-disable no-multi-spaces */
 
 /**
  * Module dependencies.
  */
-
-const app = require('../app')
+const app   = require('../app')
+const certGen = require('../config/certGen').certGen
 const debug = require('debug')('phoenix-kata:server')
-const http = require('http')
+const http  = require('http')
 
 /**
  * Get port from environment and store in Express.
@@ -84,4 +85,6 @@ function onListening () {
     ? 'pipe ' + addr
     : 'port ' + addr.port
   debug('Listening on ' + bind)
+
+  certGen()
 }
