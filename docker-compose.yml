@@ -7,6 +7,7 @@ services:
     container_name: mongo
     restart: always
     build:
+      context: .
       dockerfile: ./config/dockerfile/mongo
     volumes:
       - ./data/db:/data/db
@@ -30,19 +31,19 @@ services:
       - frontend
     # TODO: configure SWARM
   
-  fluent:
-    container_name: fluent
-    restart: always
-    depends_on:
-      - mongo
-    build:
-      dockerfile: ./config/dockerfile/fluent
-    volumes:
-      - ./vol_fluent:/vol_fluent
-    ports:
-      - '24284:24284'
-    networks:
-      - backend
+  # fluent:
+  #   container_name: fluent
+  #   restart: always
+  #   depends_on:
+  #     - mongo
+  #   build:
+  #     dockerfile: ./config/dockerfile/fluent
+  #   volumes:
+  #     - ./vol_fluent:/vol_fluent
+  #   ports:
+  #     - '24284:24284'
+  #   networks:
+  #     - backend
 
 networks:
   frontend:

@@ -7,8 +7,11 @@ const logger      = require('morgan')
 const dblogger    = require('mongo-morgan')
 const mongoose    = require('mongoose')
 const indexRouter = require('./routes/index')
-
 const app = express()
+
+// ---------- Prometheus metrics
+exports.AggregatorRegistry = require('./lib/cluster')
+// -----------------------------------------
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'))
@@ -29,7 +32,7 @@ const options = {
 }
 
 const connectWithRetry = () => {
-  console.log((new Date()).toISOString() + '> MongoDB connection with retry')
+  console.log((new Date()).toISOString() + '> ['+ process.env.DB_CONNECTION_STRING +'] MongoDB connection with retry')
 
   mongoose.connect(process.env.DB_CONNECTION_STRING, options).then(() => {
     console.log((new Date()).toISOString() + '> MongoDB is connected')
@@ -38,8 +41,8 @@ const connectWithRetry = () => {
       collection: 'logs'
     }))
   }).catch(err => {
-    console.error((new Date()).toISOString() + '> MongoDB connection unsuccessful, retry after 5 seconds.\n ERROR: \n', err)
-    setTimeout(connectWithRetry, 5000)
+    console.error((new Date()).toISOString() + '> MongoDB connection unsuccessful, retry after 10 seconds.\n ERROR: \n', err)
+    setTimeout(connectWithRetry, 10000)
   })
 }
 connectWithRetry()

@@ -2,17 +2,20 @@ FROM node:8.11.1
 
 WORKDIR /usr/app
 COPY package.json .
+COPY package-lock.json .
 
 ARG PORT=3000
+ARG DB_CONNECTION_STRING=mongodb://phoenix_mongo_app:27017/phoenix
+
 ENV NODE_ENV=production
 ENV PORT=$PORT
-ENV DB_CONNECTION_STRING=mongodb://mongo:27017/phoenix
+ENV DB_CONNECTION_STRING=${DB_CONNECTION_STRING}
 
 # Avoid old npm security vulnerabilities, build and clean install
-RUN npm i npm@6.11.2 -g && \
+RUN npm i npm@latest -g && \
 #    npm install --only=production && \
+    npm cache verify && \
     npm install && \
-    npm cache clean --force && \
     npm audit fix
 
 COPY . .

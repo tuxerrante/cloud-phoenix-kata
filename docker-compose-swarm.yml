@@ -2,12 +2,12 @@ version: "3.7"
 
 services:
 
-  mongo:
+  mongo_app:
     image: 'mongo:3.4.1'
     volumes:
-      - ./data:/data/db_2
+      - data_mongo:/data/db
     ports:
-      - '27017:27017'
+      - '27017:${MONGO_EXT_PORT}'
     networks:
       - backend
       - proxy
@@ -19,13 +19,13 @@ services:
         condition: on-failure
       resources:
         limits:
-          cpus: "0.2"
+          cpus: "0.3"
           memory: 100M
 
   app:
     image: alessandroaffinito/node-server:prd
     depends_on:
-      - 'mongo'
+      - 'mongo_app'
     ports:
       - '3000:3000'
     networks:
@@ -87,8 +87,10 @@ networks:
   monitor:
     external: true
   backend:
+    attachable: true
   default:
-    external: false
+    attachable: true
 
 volumes:
   data:
+  data_mongo:
