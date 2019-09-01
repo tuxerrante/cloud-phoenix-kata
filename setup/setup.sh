@@ -1,19 +1,24 @@
 #!/bin/bash
 
 ## ------ REQUISITES ------
-## docker, docker-machine, virtualbox, node, 
+## docker, docker-machine, virtualbox, node..
 ##
-
-# TODO: import global var inside called scripts
 export NODE_ENV=production
 export SERVER_PORT=3000
 
-export MONGO_EXT_PORT=27018
+export MONGO_EXT_PORT=27017
 export NODE_STACK_NAME=phoenix
 export MONGO_SERVICE_NAME=${NODE_STACK_NAME}_mongo_app
 export DB_CONNECTION_STRING=mongodb://${MONGO_SERVICE_NAME}:${MONGO_EXT_PORT}/phoenix
 
 export DOCKER_HUB_USERNAME=alessandroaffinito
+
+export DB_BKP_FOLDER=~/db_backups
+export LOG_BKP_FOLDER=~/log_backups
+export MIN_BKP_RETENTION=7
+export BKP_FILE_ROTATION=2
+export BKP_DAYS_ROTATION=$((MIN_BKP_RETENTION * BKP_FILE_ROTATION)) 
+
 
 # --- Install Docker and Composer
 echo -e '\n I\m assuming you have already Docker, docker-machine, virtualbox and docker-composer up & running..'
@@ -72,9 +77,9 @@ docker network create --attachable backend
 #   ---- Build images ----
 # - DB
 # docker run -d \
-#   --name mongo \
+#   --name mongo_test \
 #   --mount source=data,target=/data/db \
-#   --network backend \
+#   --network phoenix_backend \
 #   -p 27017 \
 #   mongo:3.4.1
   
@@ -113,6 +118,7 @@ fi
 
 service virtualbox start
 
+###########################################################################
 # creates machines with virtualbox driver
 # PLEASE WAIT
 # for i in 1 2; do
@@ -149,7 +155,27 @@ done
 echo ">> The swarm cluster is up and running"
 docker-machine env swarm-1
 
-# the proxy is used as single access point to the cluster
+
+## ----- Exchange SSH keys --------
+# user: docker
+# psw:  tcuser
+
+# ssh-keygen -t rsa -b 2048
+#   put them on the virtual machine
+# ssh-copy-id docker@192.168.99.103
+## --------------------------------
+
+## -----Env setup------------------
+for i in 2; do
+  eval $(docker-machine env swarm-$i)
+  cat setup/setup-docker-machine.sh | ssh docker@$(docker-machine ip swarm-$i)
+done
+## ----------------------------------
+###########################################################################
+
+
+###########################################################################
+### PROXY is used as single access point to the cluster
 docker network create -d overlay --attachable proxy
 
 docker stack deploy \
@@ -159,7 +185,7 @@ docker stack deploy \
 docker service ls
 docker network create -d overlay --attachable monitor
 
-
+###########################################################################
 ## Install "Incoming WebHooks" Slack App first, then save your web hook
 #   This API will be used as a default receiver by the alert_manager
 #   custom INCOMING Slack web hook: https://hooks.slack.com/services/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
@@ -197,6 +223,7 @@ receivers:
         url: 'http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/buildWithParameters?token=PHOENIX&service=phoenix_app&scale=-1'
 " | docker secret create alert_manager_config -
 
+###########################################################################
 # deploy the monitor stack
 #   - Prometheus 
 #   - docker-flow-monitor
@@ -219,7 +246,7 @@ docker stack deploy \
 docker stack ps exporter
 
 
-# ----------------------------------------------
+###########################################################################
 #     JENKINS
 # ----------------------------------------------
 echo "admin" | docker secret create jenkins-user -
@@ -239,7 +266,7 @@ echo "http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/configure"
 # docker service update --replicas $(($REPLICAS + 1)) phoenix_app
 
 
-# ----------------------------------------------
+###########################################################################
 #     NODE SERVER
 # ----------------------------------------------
 #  TODO: prometeus functions: https://github.com/siimon/prom-client

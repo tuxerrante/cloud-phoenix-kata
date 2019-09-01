@@ -28,6 +28,9 @@ services:
       - 'mongo_app'
     ports:
       - '3000:3000'
+    # volumes:
+    #   # Sharing the docker daemon to have docker control also from inside the image
+    #   - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - backend
       - default

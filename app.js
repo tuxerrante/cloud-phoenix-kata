@@ -32,7 +32,7 @@ const options = {
 }
 
 const connectWithRetry = () => {
-  console.log((new Date()).toISOString() + '> ['+ process.env.DB_CONNECTION_STRING +'] MongoDB connection with retry')
+  console.log((new Date()).toISOString() + '> [' + process.env.DB_CONNECTION_STRING + '] MongoDB connection with retry')
 
   mongoose.connect(process.env.DB_CONNECTION_STRING, options).then(() => {
     console.log((new Date()).toISOString() + '> MongoDB is connected')

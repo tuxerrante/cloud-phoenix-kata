@@ -4,10 +4,31 @@
 /**
  * Module dependencies.
  */
-const app   = require('../app')
+const app     = require('../app')
 const certGen = require('../config/certGen').certGen
-const debug = require('debug')('phoenix-kata:server')
-const http  = require('http')
+const debug   = require('debug')('phoenix-kata:server')
+const http    = require('http')
+
+/**
+ * Prometheus imports
+ * @module Prometheus client
+ */
+exports.register = require('../lib/registry').globalRegistry
+exports.Registry = require('../lib/registry')
+exports.contentType = require('../lib/registry').globalRegistry.contentType
+exports.validateMetricName = require('../lib/validation').validateMetricName
+exports.Counter = require('../lib/counter')
+exports.Gauge = require('../lib/gauge')
+exports.Histogram = require('../lib/histogram')
+exports.Summary = require('../lib/summary')
+exports.Pushgateway = require('../lib/pushgateway')
+exports.linearBuckets = require('../lib/bucketGenerators').linearBuckets
+exports.exponentialBuckets = require('../lib/bucketGenerators').exponentialBuckets
+exports.collectDefaultMetrics = require('../lib/defaultMetrics')
+exports.aggregators = require('../lib/metricAggregators').aggregators
+exports.AggregatorRegistry = require('../lib/cluster')
+
+require('../lib/metrics/server_metrics.js')
 
 /**
  * Get port from environment and store in Express.
