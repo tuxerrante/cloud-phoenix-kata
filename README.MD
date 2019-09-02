@@ -2,7 +2,7 @@
 Hi,  
 in the setup folder there is a `setup.sh` script where I tried to reproduce and describe all the steps needed to recreate the architecture, adding also commands in case your system is already configured (e.g.: Virtualbox machines already created).
 
-So after the setup you should be able to connect on `$(docker-machine ip swarm-$i)`:3000
+So after the setup you should be able to connect on `$(docker-machine ip swarm-$i):3000`
 
 
 ### Assumptions
@@ -20,10 +20,10 @@ This will also be hooked to a Jenkins job (*service-scale*) to enable auto-scali
 Other notifications will be redirected on a [Slack channel](https://phoenix-bgc3988.slack.com/) I made for this project.  
 The Prometheus node interface leverage on the [prom-client](https://github.com/siimon/prom-client) project.
 I also made an API (`/scale/:instances`) to manage autoscaling from the application tier in order to have
-a temporary work-around, but it seems to fails due to sibling docker problems related to shared volume.
+a temporary work-around, but it seems to fail due to sibling docker problems related to the shared volume.
 
 After the Node.js Docker is deployed an integration test is automatically done (npm test).
-**TODO**: multistage build.
+**TODO**: multistage Docker build.
 
 **TODO**: Jenkins job triggered by GIT push to rebuild server image, push it on Docker Hub and deploy it again on the virtual machines.
 
@@ -37,7 +37,7 @@ After the Node.js Docker is deployed an integration test is automatically done (
 - Certificate generation is made at server start-up and stored on file-system
 
 ## Security
-- Fixed dependencies security issues
+- Fixed Node dependencies security issues
 
 ## Automation
 - Automated initial setup through docker-composer and Swarm
