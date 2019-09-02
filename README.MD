@@ -10,7 +10,7 @@ In order to save time I had to mock-up some functionalities or patterns, so you 
 containing hard-coded values or work-around listed below as WIP paragraphs.
 
 I suggest to run the commands step by step instead of launching the script since some of them could heavily change your environment configuration.
-Once the cluster is up I've written ./setup/node-stack-rebuild.sh to fast redeploy changes from the node app to the stack.
+Once the cluster is up I've written `./setup/node-stack-rebuild.sh` to fast redeploy changes from the node app to the stack.
 
 ---
 The Docker Flow Monitor image provide a way to reconfigure Prometheus every time a new service is deployed. It uses Prometheus as a metrics storage and query engine.

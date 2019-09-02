@@ -121,3 +121,7 @@ cert/
 builds
 # volumes
 data/
+
+dev
+.~lock.*
+*.odp

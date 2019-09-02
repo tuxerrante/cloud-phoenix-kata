@@ -175,7 +175,8 @@ done
 
 
 ###########################################################################
-### PROXY is used as single access point to the cluster
+### PROXY 
+#   is used as single access point to the cluster
 docker network create -d overlay --attachable proxy
 
 docker stack deploy \
