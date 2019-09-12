@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## ------ REQUISITES ------
-## docker, docker-machine, virtualbox, node..
+## docker, docker-machine, virtualbox, node (to test locally)
 ##
 export NODE_ENV=production
 export SERVER_PORT=3000
@@ -19,9 +19,20 @@ export MIN_BKP_RETENTION=7
 export BKP_FILE_ROTATION=2
 export BKP_DAYS_ROTATION=$((MIN_BKP_RETENTION * BKP_FILE_ROTATION)) 
 
+# Exit When Any Command Fails
+set -e
+trap 'echo -e "\v>> ERROR: Be sure that none of the steps fail while starting the cluster.. "' EXIT
 
 # --- Install Docker and Composer
-echo -e '\n I\m assuming you have already Docker, docker-machine, virtualbox and docker-composer up & running..'
+echo
+read -p "Do you have already Docker, docker-machine, virtualbox and docker-composer up & running? " -n 1 -r
+echo
+if [[ $REPLY =~ ^[nN]$ ]] 
+then
+  echo ">> Please come back when you're really ready!"
+  exit 0
+fi
+
 
 sudo usermod -aG docker $USER
 
@@ -34,9 +45,9 @@ docker-machine version
 
 
 # ---- Log Rotation ----
-echo -e 'Setting up log rotation files..'
-echo -e 'Logs are rotated weekly, keeping the last 2 weeks files.'
-echo -e 'At container level no more than 3 MB are used for logs.'
+echo 'Setting up log rotation files..'
+echo 'Logs are rotated weekly, keeping the last 2 weeks files.'
+echo 'At container level no more than 3 MB will be used for logs.'
 
 DAEMON_FILE="/etc/docker/daemon.json"
 ROTATE_FILE="/etc/logrotate.d/docker"

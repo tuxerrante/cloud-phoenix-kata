@@ -1,6 +1,7 @@
 #!/bin/bash
 export DOCKER_HUB_USERNAME=alessandroaffinito
-set -x 
+set -x -e
+
 export MONGO_EXT_PORT=27017
 export NODE_STACK_NAME=phoenix
 export MONGO_SERVICE_NAME=${NODE_STACK_NAME}_mongo_app
