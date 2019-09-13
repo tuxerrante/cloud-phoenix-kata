@@ -16,6 +16,8 @@ services:
     extra_hosts:
     - "github.com:54.72.52.58"
     environment:
+      - ADDITIONAL_SERVICES=phoenix_app
+      - DOCKER_HOST=${MANAGER_IP}
       - LISTENER_ADDRESS=swarm-listener
       - MODE=swarm
       - CONNECTION_MODE=${CONNECTION_MODE:-http-server-close}

@@ -65,7 +65,7 @@ cd ..
 
 # ---- Clean everything ! ----
 docker-compose down 
-docker-compose -f docker-compose-swarm.yml down
+docker-compose -f config/stack/docker-compose-swarm.yml down
 # - CAUTION
 # docker system prune 
 
@@ -84,7 +84,7 @@ docker network create --attachable backend
 #   mongo:3.4.1
   
 # - nodejs server
-cp config/dockerfile/node-swarm . && \
+cp config/stack/node-swarm . && \
     docker build --no-cache --tag=server -f node-swarm --force-rm . && \
     rm node-swarm 
 # docker run -p 3000:3000 --network backend --link mongo server
@@ -104,7 +104,7 @@ docker login --username DOCKER_HUB_USERNAME
 docker swarm init
 
 # ---- use this also to redeploy after a change (eg: scaling)
-# docker stack deploy -c docker-compose-swarm.yml phoenix
+# docker stack deploy -c config/stack/docker-compose-swarm.yml phoenix
 # docker stack services phoenix
 
 # ---- Take down
@@ -153,6 +153,9 @@ for i in 2; do
 done
 
 echo ">> The swarm cluster is up and running"
+
+export MANAGER_IP=$(docker-machine ip swarm-1):2377
+
 docker-machine env swarm-1
 
 
@@ -180,7 +183,7 @@ done
 docker network create -d overlay --attachable proxy
 
 docker stack deploy \
-    -c config/dockerfile/docker-flow-proxy-mem.yml \
+    -c config/stack/docker-flow-proxy-mem.yml \
     proxy
 
 docker service ls
@@ -232,7 +235,7 @@ receivers:
 # DOMAIN=$(docker-machine ip swarm-1)
 # here the secret alert_manager_config is loaded in the swarm listener
 docker stack deploy \
-  -c config/dockerfile/docker-flow-monitor-slack.yml \
+  -c config/stack/docker-flow-monitor-slack.yml \
   monitor
 
 docker stack ps monitor
@@ -241,7 +244,7 @@ docker stack ps monitor
 #   - cadvisor
 #   - node-exporter
 docker stack deploy \
-    -c config/dockerfile/exporters.yml \
+    -c config/stack/exporters.yml \
     exporter
 
 docker stack ps exporter
@@ -252,7 +255,7 @@ docker stack ps exporter
 # ----------------------------------------------
 echo "admin" | docker secret create jenkins-user -
 echo "admin" | docker secret create jenkins-pass -
-docker stack deploy -c config/dockerfile/jenkins-scale.yml jenkins
+docker stack deploy -c config/stack/jenkins-scale.yml jenkins
 docker stack ps jenkins
 
 echo "Configure Jenkins jobs at: "
@@ -271,7 +274,7 @@ echo "http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/configure"
 #     NODE SERVER
 # ----------------------------------------------
 #  TODO: prometeus functions: https://github.com/siimon/prom-client
-docker stack deploy -c docker-compose-swarm.yml phoenix
+docker stack deploy -c config/stack/docker-compose-swarm.yml phoenix
 
 
 # --- SCREENSHOTS

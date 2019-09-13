@@ -13,7 +13,7 @@ docker service rm phoenix_app
 docker image prune
 
 set +x
-cp config/dockerfile/node-swarm . && \
+cp config/stack/node-swarm . && \
     docker build --no-cache --tag=server -f node-swarm --force-rm . && \
     rm node-swarm
 
@@ -24,7 +24,7 @@ docker tag server ${DOCKER_HUB_USERNAME}/node-server:prd && \
 
 echo "-----------------------------------------------"
 echo -e "\n Deploying on the stack"
-docker stack deploy -c docker-compose-swarm.yml $NODE_STACK_NAME
+docker stack deploy -c config/stack/docker-compose-swarm.yml $NODE_STACK_NAME
 
 echo "-----------------------------------------------"
 echo -e "\n docker stack services ${NODE_STACK_NAME}"
