@@ -35,6 +35,7 @@ services:
       - PASSWORD_SECRET=/run/secrets/${JENKINS_PASS_SECRET:-jenkins-pass}
       - COMMAND_OPTIONS=-master http://master:8080/jenkins -labels 'prod' -executors 4
     networks:
+      - proxy
       - default
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

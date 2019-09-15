@@ -11,7 +11,7 @@ export NODE_STACK_NAME=phoenix
 export MONGO_SERVICE_NAME=${NODE_STACK_NAME}_mongo_app
 export DB_CONNECTION_STRING=mongodb://${MONGO_SERVICE_NAME}:${MONGO_EXT_PORT}/phoenix
 
-export DOCKER_HUB_USERNAME=alessandroaffinito
+export DOCKER_HUB_USERNAME=affinito.ale@gmail.com
 
 export DB_BKP_FOLDER=~/db_backups
 export LOG_BKP_FOLDER=~/log_backups
@@ -20,7 +20,10 @@ export BKP_FILE_ROTATION=2
 export BKP_DAYS_ROTATION=$((MIN_BKP_RETENTION * BKP_FILE_ROTATION)) 
 
 # Exit When Any Command Fails
-set -e
+set -e -u
+# set debugging
+set -x
+
 trap 'echo -e "\v>> ERROR: Be sure that none of the steps fail while starting the cluster.. "' EXIT
 
 # --- Install Docker and Composer
@@ -49,38 +52,38 @@ echo 'Setting up log rotation files..'
 echo 'Logs are rotated weekly, keeping the last 2 weeks files.'
 echo 'At container level no more than 3 MB will be used for logs.'
 
-DAEMON_FILE="/etc/docker/daemon.json"
-ROTATE_FILE="/etc/logrotate.d/docker"
+export DAEMON_FILE="/etc/docker/daemon.json"
+export ROTATE_FILE="/etc/logrotate.d/docker"
 
-sudo bash -c "cat > $DAEMON_FILE " <<EOF
-{
-"log-driver": "json-file",
-"log-opts": {
-    "max-size": "1m",    
-    "max-file": "3",
-    "compress": "true"
-    }
-} 
-EOF
+# sudo bash -c "cat > $DAEMON_FILE " <<EOF
+# {
+# "log-driver": "json-file",
+# "log-opts": {
+#     "max-size": "1m",    
+#     "max-file": "3",
+#     "compress": "true"
+#     }
+# } 
+# EOF
 
-sudo bash -c "cat > $ROTATE_FILE " <<EOF
-/var/lib/docker/containers/*/*.log {
-        rotate 2
-        weekly
-        compress
-}
-EOF
+# sudo bash -c "cat > $ROTATE_FILE " <<EOF
+# /var/lib/docker/containers/*/*.log {
+#         rotate 2
+#         weekly
+#         compress
+# }
+# EOF
 
-
-cd ..
 
 # ---- Clean everything ! ----
-docker-compose down 
+# docker-compose down 
 docker-compose -f config/stack/docker-compose-swarm.yml down
 # - CAUTION
-# docker system prune 
-
+set +e
+docker system prune 
 docker network create --attachable backend
+
+# set -e
 
 ### OLD
 ### This section is replaced by below docker-compose building
@@ -106,7 +109,7 @@ docker image ls
 echo
 
 # ---- PUBLISH
-docker login --username DOCKER_HUB_USERNAME
+docker login --username ${DOCKER_HUB_USERNAME}
 # docker tag server ${DOCKER_HUB_USERNAME}/node-server:prd
 # docker push ${DOCKER_HUB_USERNAME}/node-server:prd
 
@@ -131,19 +134,24 @@ service virtualbox start
 
 ###########################################################################
 # creates machines with virtualbox driver
-# PLEASE WAIT
-# for i in 1 2; do
-#     docker-machine create -d virtualbox --virtualbox-cpu-count 2 swarm-$i
-# done
-
-# OR if they are already created
-# for i in 1 2; do
-#     docker-machine start swarm-$i
-# done
+echo
+read -p "Do you have already created doker virtualBox machines? " -n 1 -r
+echo
+if [[ $REPLY =~ ^[nN]$ ]]; then
+  # PLEASE WAIT
+  for i in 1 2; do
+    docker-machine create -d virtualbox --virtualbox-cpu-count 2 swarm-$i
+  done
+else
+  # OR if they have been already created
+  for i in 1 2; do
+      docker-machine start swarm-$i
+  done
+fi
 
 # to force machine ip settings
 # echo "ifconfig eth1 192.168.99.111 netmask 255.255.255.0 broadcast 192.168.99.255 up" | docker-machine ssh swarm-1 sudo tee /var/lib/boot2docker/bootsync.sh > /dev/null
-
+echo
 docker-machine ls
 
 # Connect shell to the manager machine
@@ -173,10 +181,18 @@ docker-machine env swarm-1
 ## ----- Exchange SSH keys --------
 # user: docker
 # psw:  tcuser
-
-# ssh-keygen -t rsa -b 2048
-#   put them on the virtual machine
-# ssh-copy-id docker@192.168.99.103
+echo
+read -p "Have you already exchanged certificate keys with docker machines? " -n 1 -r
+echo
+if [[ $REPLY =~ ^[nN]$ ]]; then
+  ssh-keygen -t rsa -b 2048
+  #   put the certificate on the virtual machine
+  for i in 1 2; do
+    ssh-copy-id docker@${docker machine ip swarm-$i} 
+  done
+else
+  echo Ok
+fi
 ## --------------------------------
 
 ## -----Env setup------------------
@@ -189,21 +205,11 @@ done
 
 
 ###########################################################################
-### PROXY 
-#   is used as single access point to the cluster
-docker network create -d overlay --attachable proxy
-
-docker stack deploy \
-    -c config/stack/docker-flow-proxy-mem.yml \
-    proxy
-
-docker service ls
-docker network create -d overlay --attachable monitor
-
-###########################################################################
+#
+#   PROMETHEUS MONITORING
+#
 ## Install "Incoming WebHooks" Slack App first, then save your web hook
 #   This API will be used as a default receiver by the alert_manager
-#   custom INCOMING Slack web hook: https://hooks.slack.com/services/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
 #   APP INCOMING Slack web hook :   https://hooks.slack.com/services/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
 echo "route:
   group_by: [service,scale]
@@ -238,25 +244,27 @@ receivers:
         url: 'http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/buildWithParameters?token=PHOENIX&service=phoenix_app&scale=-1'
 " | docker secret create alert_manager_config -
 
-###########################################################################
-# deploy the monitor stack
-#   - Prometheus 
+# Deploy the monitor stack
+#   - Prometheus Alert Manager
+#       https://prometheus.io/docs/alerting/alertmanager/
+#       The secret alert_manager_config is loaded in the AlertManager from the YAML
 #   - docker-flow-monitor
 #   - docker-flow-swarm-listener
-# DOMAIN=$(docker-machine ip swarm-1)
-# here the secret alert_manager_config is loaded in the swarm listener
-docker stack deploy \
-  -c config/stack/docker-flow-monitor-slack.yml \
-  monitor
+
+export DOMAIN=$(docker-machine ip swarm-1)
+
+docker stack deploy -c ./config/stack/docker-flow-monitor-slack.yml monitor
 
 docker stack ps monitor
 
-# Deploy 
-#   - cadvisor
-#   - node-exporter
-docker stack deploy \
-    -c config/stack/exporters.yml \
-    exporter
+# Deploy Prometheus Exporters
+#   - cadvisor      - 
+#   - node-exporter - https://prometheus.io/docs/guides/node-exporter/
+#     + mem_load
+#     + disk_load
+#     + TODO: req/sec
+#     + TODO: autoscale db too
+docker stack deploy -c config/stack/exporters.yml exporter
 
 docker stack ps exporter
 
@@ -280,6 +288,17 @@ echo "http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/configure"
 # REPLICAS=$( docker service ps phoenix_app | grep Running| wc -l)
 # docker service update --replicas $(($REPLICAS + 1)) phoenix_app
 
+###########################################################################
+### PROXY 
+#   is used as single access point to the cluster
+docker network create -d overlay --attachable proxy
+docker network create -d overlay --attachable monitor
+
+docker stack deploy -c config/stack/docker-flow-proxy-mem.yml proxy
+
+docker service ls
+
+###########################################################################
 
 ###########################################################################
 #     NODE SERVER

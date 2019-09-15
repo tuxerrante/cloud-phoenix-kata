@@ -49,3 +49,6 @@ docker service logs -f ${NODE_STACK_NAME}_app
 ## To get specific image id 
 # docker ps --no-trunc -f name=phoenix_mongo_app ...
 
+
+docker ps --no-trunc -f name=jenkins
+docker exec -it 17e66bd87ed3f5f8b77561acca9c060905ef5e2d880cdb339b59c45d728c09c7 sh

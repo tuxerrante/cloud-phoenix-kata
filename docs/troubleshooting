@@ -1,0 +1,31 @@
+# To redeploy a stack in the docker-machine from a local file
+mkdir swarm-1
+docker-machine mount swarm-1:/home/docker ./swarm-1
+cp -r config/ ./swarm-1/
+docker-machine ssh swarm-1
+docker stack deploy \
+>   -c config/stack/docker-flow-monitor-slack.yml \
+>   monitor
+###
+
+# To install packages in docker-machines
+http://distro.ibiblio.org/tinycorelinux/tcz_2x.html
+tce-load PACKAGENAME
+###
+
+#
+https://success.docker.com/article/troubleshooting-container-networking
+
+
+# Node Exporter - config/stack/docker-flow-monitor-slack.yml
+Once the Node Exporter is installed and running, you can verify that metrics
+are being exported by cURLing the /metrics endpoint:
+curl http://localhost:9100/metrics
+
+
+# Auto Scaling
+https://prometheus.io/docs/prometheus/latest/querying/examples/
+
+http_requests_total{job=~".*phoenix_app"}
+rate(http_requests_total{job=~".*phoenix_app"}[5m])
+

@@ -44,10 +44,16 @@ services:
       labels:
         - com.df.notify=true
         - com.df.scrapePort=9100
+        
         - com.df.alertName.1=mem_load
         - com.df.alertIf.1=(sum by (instance) (node_memory_MemTotal) - sum by (instance) (node_memory_MemFree + node_memory_Buffers + node_memory_Cached)) / sum by (instance) (node_memory_MemTotal) > 0.8
-        - com.df.alertName.2=diskload
+
+        - com.df.alertName.2=disk_load
         - com.df.alertIf.2=@node_fs_limit:0.8
+
+        - com.df.alertName.3=http_req_load
+        - com.df.alertIf.3=(avg(http_requests_total[5m]) by (application)) > 10
+
     command: '--path.procfs="/host/proc" --path.sysfs="/host/sys" --collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)" --collector.textfile.directory="/etc/node-exporter/" --collector.conntrack --collector.diskstats --collector.entropy --collector.filefd --collector.filesystem --collector.loadavg --collector.mdadm --collector.meminfo --collector.netdev --collector.netstat --collector.stat --collector.textfile --collector.time --collector.vmstat --collector.ipvs'
 
 networks:
