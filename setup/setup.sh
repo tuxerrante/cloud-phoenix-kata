@@ -198,10 +198,12 @@ fi
 ## -----Env setup------------------
 for i in 2; do
   eval $(docker-machine env swarm-$i)
+  export CURRENT_TIME=$(date +%H:%M:%S)
   cat setup/setup-docker-machine.sh | ssh docker@$(docker-machine ip swarm-$i)
 done
 ## ----------------------------------
 ###########################################################################
+
 
 ###########################################################################
 ### PROXY 
@@ -212,8 +214,10 @@ docker network create -d overlay --attachable monitor
 
 docker stack deploy -c config/stack/docker-flow-proxy-mem.yml proxy
 
+echo
+date +%H:%M
 docker service ls
-
+echo
 
 
 ###########################################################################
@@ -257,14 +261,19 @@ receivers:
 " | docker secret create alert_manager_config -
 
 ### Deploy Prometheus Exporters
-#   - cadvisor      - 
+#
+#   - cadvisor 
+#       cAdvisor analyzes and exposes resource usage and performance data from running containers.
+#        cAdvisor exposes Prometheus metrics out of the box.
+#
 #   - node-exporter - https://prometheus.io/docs/guides/node-exporter/
 #     + mem_load
 #     + disk_load
 #     + TODO: req/sec
 #     + TODO: autoscale db too
-docker stack deploy -c config/stack/exporters.yml exporter
-docker stack ps exporter
+
+#docker stack deploy -c config/stack/exporters.yml exporter
+#docker stack ps exporter
 
 ### Deploy the monitor stack
 #   - Prometheus Alert Manager
@@ -274,22 +283,35 @@ docker stack ps exporter
 #   - docker-flow-swarm-listener
 
 export DOMAIN=$(docker-machine ip swarm-1)
+# docker stack deploy -c ./config/stack/docker-flow-monitor-slack.yml monitor
 
-docker stack deploy -c ./config/stack/docker-flow-monitor-slack.yml monitor
-
+docker stack deploy -c config/stack/docker-monitoring-complete.yml monitor
 docker stack ps monitor
-
+echo
 
 ###########################################################################
 #     JENKINS
 # ----------------------------------------------
 echo "admin" | docker secret create jenkins-user -
 echo "admin" | docker secret create jenkins-pass -
+
 docker stack deploy -c config/stack/jenkins-scale.yml jenkins
+echo
+
+sleep 2s
+
+# let the containers update their dns 
+JENKINS_AGENT_ID=`docker service ps jenkins_agent -f desired-state=running --no-trunc | awk 'END{ printf $1"\n"}'`
+docker exec -t jenkins_agent.1.${JENKINS_AGENT_ID} cat /etc/resolv.conf
+
+# echo -e "\nnameserver 8.8.8.8\nnameserver 8.8.4.4" >> /etc/resolv.conf
+# done through volumes.
+
 docker stack ps jenkins
 
 echo "Configure Jenkins jobs at: "
 echo "http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/configure"
+echo
 # ----------------------------------------------
 
 # ------ Auto Scaling & monitoring stack  --------------------- #
