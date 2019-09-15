@@ -75,7 +75,7 @@ export ROTATE_FILE="/etc/logrotate.d/docker"
 # EOF
 
 
-# ---- Clean everything ! ----
+#### ---- Clean everything ! ----
 # docker-compose down 
 docker-compose -f config/stack/docker-compose-swarm.yml down
 # - CAUTION
@@ -203,6 +203,18 @@ done
 ## ----------------------------------
 ###########################################################################
 
+###########################################################################
+### PROXY 
+#   is used as single access point to the cluster
+#   Run before the exporters (ha-proxy)
+docker network create -d overlay --attachable proxy
+docker network create -d overlay --attachable monitor
+
+docker stack deploy -c config/stack/docker-flow-proxy-mem.yml proxy
+
+docker service ls
+
+
 
 ###########################################################################
 #
@@ -244,7 +256,17 @@ receivers:
         url: 'http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/buildWithParameters?token=PHOENIX&service=phoenix_app&scale=-1'
 " | docker secret create alert_manager_config -
 
-# Deploy the monitor stack
+### Deploy Prometheus Exporters
+#   - cadvisor      - 
+#   - node-exporter - https://prometheus.io/docs/guides/node-exporter/
+#     + mem_load
+#     + disk_load
+#     + TODO: req/sec
+#     + TODO: autoscale db too
+docker stack deploy -c config/stack/exporters.yml exporter
+docker stack ps exporter
+
+### Deploy the monitor stack
 #   - Prometheus Alert Manager
 #       https://prometheus.io/docs/alerting/alertmanager/
 #       The secret alert_manager_config is loaded in the AlertManager from the YAML
@@ -256,17 +278,6 @@ export DOMAIN=$(docker-machine ip swarm-1)
 docker stack deploy -c ./config/stack/docker-flow-monitor-slack.yml monitor
 
 docker stack ps monitor
-
-# Deploy Prometheus Exporters
-#   - cadvisor      - 
-#   - node-exporter - https://prometheus.io/docs/guides/node-exporter/
-#     + mem_load
-#     + disk_load
-#     + TODO: req/sec
-#     + TODO: autoscale db too
-docker stack deploy -c config/stack/exporters.yml exporter
-
-docker stack ps exporter
 
 
 ###########################################################################
@@ -288,15 +299,6 @@ echo "http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/configure"
 # REPLICAS=$( docker service ps phoenix_app | grep Running| wc -l)
 # docker service update --replicas $(($REPLICAS + 1)) phoenix_app
 
-###########################################################################
-### PROXY 
-#   is used as single access point to the cluster
-docker network create -d overlay --attachable proxy
-docker network create -d overlay --attachable monitor
-
-docker stack deploy -c config/stack/docker-flow-proxy-mem.yml proxy
-
-docker service ls
 
 ###########################################################################
 

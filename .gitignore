@@ -125,3 +125,6 @@ data/
 dev
 .~lock.*
 *.odp
+
+# ---- Swarm mounts
+swarm-*/

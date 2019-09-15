@@ -33,6 +33,8 @@ services:
       - monitor
     secrets:
       - alert_manager_config
+    depends_on:
+      - cadvisor
     command: --config.file=/run/secrets/alert_manager_config --storage.path=/alertmanager
 
 
