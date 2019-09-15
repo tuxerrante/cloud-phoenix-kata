@@ -11,8 +11,11 @@ services:
     networks:
       - proxy
       - default
-    extra_hosts:
-    - "github.com:54.72.52.58"
+      - monitor
+    # extra_hosts:
+    # - "github.com:54.72.52.58"
+    # volumes:
+    #   - ../resolv.conf:/etc/resolv.conf
     deploy:
       labels:
         - com.df.notify=true
@@ -33,12 +36,14 @@ services:
     environment:
       - USER_NAME_SECRET=/run/secrets/${JENKINS_USER_SECRET:-jenkins-user}
       - PASSWORD_SECRET=/run/secrets/${JENKINS_PASS_SECRET:-jenkins-pass}
-      - COMMAND_OPTIONS=-master http://master:8080/jenkins -labels 'prod' -executors 4
+      - COMMAND_OPTIONS=-master http://master:8080/jenkins -labels 'prod' -executors 2
     networks:
       - proxy
       - default
+      - monitor
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      # - ../resolv.conf:/etc/resolv.conf
     secrets:
       - jenkins-user
       - jenkins-pass
@@ -51,11 +56,12 @@ services:
         limits:
           memory: 300M
 
+
 networks:
   proxy:
     external: true
-  default:
-    external: false
+  monitor:
+    external: true
 
 secrets:
   jenkins-user:

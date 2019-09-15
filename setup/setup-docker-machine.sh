@@ -32,19 +32,22 @@ EOF
 #         compress
 # }
 # EOF
-
+###############################################################################
 ##----- Cron jobs -----------
 # -- Log BKP
 (crontab -l 2>/dev/null; echo "0 0 * * 0 ./cron-backup-logs.sh") | crontab -
 
 # -- DB BKP 
 (crontab -l 2>/dev/null; echo "0 1 * * 0 ./cron-backup.sh") | crontab -
-
-sudo find $DB_BKP_FOLDER -mtime +$BKP_DAYS_ROTATION -type f -name *.tar -delete
-sudo find $LOG_BKP_FOLDER -mtime +$BKP_DAYS_ROTATION -type f -name *.tar -delete
+###############################################################################
+## Sync time
+sudo -i
+date +%T -s "${CURRENT_TIME}"
+###############################################################################
 
 
 #### NOTES
 # sudo find /var/lib/docker/containers -mtime -7 -type f -name "*json.log" -exec cp -a "{}" . \; 
 # sudo find /var/lib/docker/containers -mtime +14 -type f -name *json.log -delete   
 ##---------------------------
+

@@ -45,6 +45,8 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
       - /etc/hostname:/etc/host_hostname
+    ports:
+      - 9100:9100
     deploy:
       mode: global
       labels:
