@@ -1,14 +1,14 @@
 #!/bin/bash
-export DOCKER_HUB_USERNAME=alessandroaffinito
-set -x -e
-
+export DOCKER_HUB_USERNAME=affinito.ale@gmail.com
 export MONGO_EXT_PORT=27017
 export NODE_STACK_NAME=phoenix
 export MONGO_SERVICE_NAME=${NODE_STACK_NAME}_mongo_app
 export DB_CONNECTION_STRING=mongodb://${MONGO_SERVICE_NAME}:${MONGO_EXT_PORT}/phoenix
 
 # execute this script from the root folder
-# cd .. 
+set -x -e
+
+eval $(docker-machine env swarm-1)
 
 docker service rm phoenix_app 
 docker image prune

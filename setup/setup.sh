@@ -97,7 +97,7 @@ docker network create --attachable backend
 #   -p 27017 \
 #   mongo:3.4.1
   
-# - nodejs server
+# - BUILD nodejs server
 cp config/stack/node-swarm . && \
     docker build --no-cache --tag=server -f node-swarm --force-rm . && \
     rm node-swarm 

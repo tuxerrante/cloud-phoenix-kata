@@ -44,7 +44,7 @@ After the Node.js Docker is deployed an integration test is automatically done (
 - Script to build and redeploy the app after some modification (`./setup/node-stack-rebuild.sh`)
 - Integration tests are run from the Docker file `node-swarm` immediately after the deploy
 - Backups: inside the VM machine configuration *setup/setup-docker-machine.sh* there will be two cron jobs setup to bakup Mongo DB data and all the container logs younger than $MIN_BKP_RETENTION days
-- TODO: Jenkins CI/CD: 
+- Jenkins CI/CD: on first start update Jekin autoscale pipeline with the script provided in `service-scale.groovy`
 - TODO: Unit tests
 
 ## Monitoring
