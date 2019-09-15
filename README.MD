@@ -49,3 +49,11 @@ After the Node.js Docker is deployed an integration test is automatically done (
 
 ## Monitoring
 - WIP: A monitoring stack is provided where Prometheus is in charge of collecting metrics from the cluster, this should then be used to call a Jenkins job (service-scale) to scale up or down the web app in case some given condition is met.
+
+----
+An overview of the architecure up & running
+![Architecture logs](docs/services-up_node-logs_mocha-test_mongo-connection.png)
+
+After Jenkins auto-scale service had run you can check the services with `docker service ps phoenix_app -f desired-state=running`
+![Jenkins autoscaling](docs/jenkins-autoscale_cadvisor-monitor.jpg)
+
