@@ -46,6 +46,11 @@ http://192.168.99.104:8080/containers/
 docker@swarm-1:~$ docker exec -it jenkins_agent.1.tdzotcz7q3yx2agbwpn4d2w7t ping github.com
 docker@swarm-1:~$ docker exec -it jenkins_agent.1.ba5s1utit69omctrx2uwt33c2 ipaddr | grep inet
 
+# let the containers update their dns 
+# JENKINS_AGENT_ID=`docker service ps jenkins_agent -f desired-state=running --no-trunc | awk 'END{ printf $1"\n"}'`
+# docker exec -t jenkins_agent.1.${JENKINS_AGENT_ID} cat /etc/resolv.conf
+# echo -e "\nnameserver 8.8.8.8\nnameserver 8.8.4.4" >> /etc/resolv.conf
+# done through volumes.
 
 
 ###############################################################################

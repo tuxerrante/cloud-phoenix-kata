@@ -298,17 +298,9 @@ echo "admin" | docker secret create jenkins-pass -
 docker stack deploy -c config/stack/jenkins-scale.yml jenkins
 echo
 
-sleep 2s
-
-# let the containers update their dns 
-JENKINS_AGENT_ID=`docker service ps jenkins_agent -f desired-state=running --no-trunc | awk 'END{ printf $1"\n"}'`
-docker exec -t jenkins_agent.1.${JENKINS_AGENT_ID} cat /etc/resolv.conf
-
-# echo -e "\nnameserver 8.8.8.8\nnameserver 8.8.4.4" >> /etc/resolv.conf
-# done through volumes.
-
+sleep 2
 docker stack ps jenkins
-
+echo
 echo "Configure Jenkins jobs at: "
 echo "http://$(docker-machine ip swarm-1)/jenkins/job/service-scale/configure"
 echo
