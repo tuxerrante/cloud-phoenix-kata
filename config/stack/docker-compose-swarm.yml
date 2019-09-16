@@ -9,7 +9,6 @@ services:
     ports:
       - '27017:${MONGO_EXT_PORT}'
     networks:
-      - backend
       - proxy
       - monitor
       - default
@@ -32,7 +31,6 @@ services:
     #   # Sharing the docker daemon to have docker control also from inside the image
     #   - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - backend
       - default
       - proxy
       - monitor
@@ -67,13 +65,11 @@ services:
 
 networks:
   proxy:
-    external: true
+#    external: true
   monitor:
-    external: true
-  backend:
-    attachable: true
+#    external: true
   default:
-    attachable: true
+#    attachable: true
 
 volumes:
   data:

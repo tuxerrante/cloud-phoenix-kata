@@ -2,7 +2,6 @@ process.env.NODE_ENV = 'test'
 
 const describe = require('mocha').describe
 const it = require('mocha').it
-
 const chai = require('chai')
 const chaiHttp = require('chai-http')
 const app = require('../app')

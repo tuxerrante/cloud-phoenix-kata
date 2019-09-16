@@ -5,13 +5,11 @@
 ##
 export NODE_ENV=production
 export SERVER_PORT=3000
-
 export MONGO_EXT_PORT=27017
 export NODE_STACK_NAME=phoenix
 export MONGO_SERVICE_NAME=${NODE_STACK_NAME}_mongo_app
 export DB_CONNECTION_STRING=mongodb://${MONGO_SERVICE_NAME}:${MONGO_EXT_PORT}/phoenix
-
-export DOCKER_HUB_USERNAME=affinito.ale@gmail.com
+export DOCKER_HUB_USERNAME=alessandroaffinito
 
 export DB_BKP_FOLDER=~/db_backups
 export LOG_BKP_FOLDER=~/log_backups
