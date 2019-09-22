@@ -23,7 +23,6 @@ I also made an API (`/scale/:instances`) to manage autoscaling from the applicat
 a temporary work-around, but it seems to fail due to sibling docker problems related to the shared volume.
 
 After the Node.js Docker is deployed an integration test is automatically done (npm test).
-**TODO**: multistage Docker build.
 
 **TODO**: Jenkins job triggered by GIT push to rebuild server image, push it on Docker Hub and deploy it again on the virtual machines.
 
@@ -32,6 +31,9 @@ After the Node.js Docker is deployed an integration test is automatically done (
 - Added re-triable connectivity to database
 - Automated restart of nodes through Swarm
 - Cron jobs to backup DB data from running containers (setup-docker-machine.sh)
+- *TODO*: chaos monkey  
+https://www.gremlin.com/chaos-monkey/chaos-monkey-alternatives/docker/
+
 
 ## Performance
 - Certificate generation is made at server start-up and stored on file-system
@@ -42,16 +44,22 @@ After the Node.js Docker is deployed an integration test is automatically done (
 ## Automation
 - Automated initial setup through docker-composer and Swarm
 - Script to build and redeploy the app after some modification (`./setup/node-stack-rebuild.sh`)
-- Integration tests are run from the Docker file `node-swarm` immediately after the deploy
-- Backups: inside the VM machine configuration *setup/setup-docker-machine.sh* there will be two cron jobs setup to bakup Mongo DB data and all the container logs younger than $MIN_BKP_RETENTION days
-- Jenkins CI/CD: on first start update Jekin autoscale pipeline with the script provided in `service-scale.groovy`
+    *TODO*: idempotent.
+- Integration tests are run from the multistage Docker file `config/stack/node-multistage.dockerfile` immediately after the testing build
+- Backups: inside the VM machine configuration `setup/setup-docker-machine.sh` there will be two cron jobs setup to backup Mongo DB data and all the container logs younger than *$MIN_BKP_RETENTION* days
+- Jenkins CI/CD: on first start you have to update Jenkins autoscale pipeline with the script provided in `service-scale.groovy`
 - TODO: Unit tests
 
 ## Monitoring
 - WIP: A monitoring stack is provided where Prometheus is in charge of collecting metrics from the cluster, this should then be used to call a Jenkins job (service-scale) to scale up or down the web app in case some given condition is met.
 
 ----
-An overview of the architecure up & running
+The architecture design (to-be):  
+
+![TO-BE architecture design](docs/phoenix_cloud_architecture.png)
+
+An overview of the architecture up & running (as-is):  
+
 ![Architecture logs](docs/services-up_node-logs_mocha-test_mongo-connection.png)
 
 After Jenkins auto-scale service had run you can check the services with `docker service ps phoenix_app -f desired-state=running`
