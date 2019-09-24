@@ -8,10 +8,10 @@ services:
       - data_mongo:/data/db
     ports:
       - '27017:${MONGO_EXT_PORT}'
-    networks:
-      - proxy
-      - monitor
-      - default
+    # networks:
+    #   - proxy
+    #   - monitor
+    #   - default
     deploy:
       replicas: 1
       restart_policy:
@@ -30,10 +30,12 @@ services:
     # volumes:
     #   # Sharing the docker daemon to have docker control also from inside the image
     #   - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - default
-      - proxy
-      - monitor
+    # networks:
+    #   - default
+    #   - proxy
+    #   - monitor
+    environment: 
+      - VIRTUAL_HOST=app.local
     labels:
       - com.df.notify=true
       - com.df.distribute=true

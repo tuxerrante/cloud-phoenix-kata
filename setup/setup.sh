@@ -1,8 +1,4 @@
 #!/bin/bash
-
-## ------ REQUISITES ------
-## docker, docker-machine, virtualbox, node (to test locally)
-##
 export NODE_ENV=production
 export SERVER_PORT=3000
 export MONGO_EXT_PORT=27017
@@ -24,28 +20,31 @@ set -x
 
 trap 'echo -e "\v>> ERROR: Be sure that none of the steps fail while starting the cluster.. "' EXIT
 
-# --- Install Docker and Composer
+
+####------ Checking requirements -----
+# echo
+# read -p "Do you have already Docker, docker-machine, virtualbox and docker-composer up & running? " -n 1 -r
+
+docker -v
+docker-machine -v
+vboxmanage --version
 echo
-read -p "Do you have already Docker, docker-machine, virtualbox and docker-composer up & running? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[nN]$ ]] 
-then
-  echo ">> Please come back when you're really ready!"
-  exit 0
-fi
+# if [[ $REPLY =~ ^[nN]$ ]] 
+# then
+#   echo ">> Please come back when you're really ready!"
+#   exit 0
+# fi
 
-
-sudo usermod -aG docker $USER
-
-
-# Docker Machine
+####------ GET Docker Machine
 # base=https://github.com/docker/machine/releases/download/v0.16.0 &&
 #   curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
 #   sudo mv /tmp/docker-machine /usr/local/bin/docker-machine
-docker-machine version
+# docker-machine version
 
+####------ USER
+sudo usermod -aG docker $USER
 
-# ---- Log Rotation ----
+####------ Log Rotation ----
 echo 'Setting up log rotation files..'
 echo 'Logs are rotated weekly, keeping the last 2 weeks files.'
 echo 'At container level no more than 3 MB will be used for logs.'
@@ -53,75 +52,30 @@ echo 'At container level no more than 3 MB will be used for logs.'
 export DAEMON_FILE="/etc/docker/daemon.json"
 export ROTATE_FILE="/etc/logrotate.d/docker"
 
-# sudo bash -c "cat > $DAEMON_FILE " <<EOF
-# {
-# "log-driver": "json-file",
-# "log-opts": {
-#     "max-size": "1m",    
-#     "max-file": "3",
-#     "compress": "true"
-#     }
-# } 
-# EOF
 
-# sudo bash -c "cat > $ROTATE_FILE " <<EOF
-# /var/lib/docker/containers/*/*.log {
-#         rotate 2
-#         weekly
-#         compress
-# }
-# EOF
-
-
-#### ---- Clean everything ! ----
+####------ Clean everything ! ----
 # docker-compose down 
 docker-compose -f config/stack/docker-compose-swarm.yml down
-# - CAUTION
+# ---- CAUTION
 set +e
-docker system prune 
-docker network create --attachable backend
+# docker system prune 
 
-# set -e
 
-### OLD
-### This section is replaced by below docker-compose building
-#   search for: stack-deploy-docker-compose-swarm
-#   ---- Build images ----
-# - DB
+set -e
+
+### To deploy a test DB manually
 # docker run -d \
 #   --name mongo_test \
 #   --mount source=data,target=/data/db \
 #   --network phoenix_backend \
 #   -p 27017 \
 #   mongo:3.4.1
-  
-# - BUILD nodejs server
-cp config/stack/node-app.dockerfile . && \
-    docker build --no-cache --tag=server -f node-app.dockerfile --force-rm . && \
-    rm node-app.dockerfile 
-# docker run -p 3000:3000 --network backend --link mongo server
-# cd ../..
 
+
+echo
 echo -e '\nAvailable images: '
 docker image ls
 echo
-
-# ---- PUBLISH
-docker login --username ${DOCKER_HUB_USERNAME}
-# docker tag server ${DOCKER_HUB_USERNAME}/node-server:prd
-# docker push ${DOCKER_HUB_USERNAME}/node-server:prd
-
-# ------------------------------------------------------------- #
-# ---- initialize the stack manager  ----
-docker swarm init
-
-# ---- use this also to redeploy after a change (eg: scaling)
-# docker stack deploy -c config/stack/docker-compose-swarm.yml phoenix
-# docker stack services phoenix
-
-# ---- Take down
-# docker stack rm phoenix
-# docker service ls
 
 
 if [[ "$(uname -s )" == "Linux" ]]; then
@@ -131,20 +85,30 @@ fi
 service virtualbox start
 
 ###########################################################################
+###         MACHINES              #########################################
 # creates machines with virtualbox driver
+MACHINES_CREATED_NUM=`docker-machine ls --quiet --filter driver=virtualbox | wc -l`
+MACHINES_READY_NUM=` docker-machine ls --quiet --filter driver=virtualbox --filter state=Running | wc -l`
+MACHINES_STOPPED=`docker-machine ls --quiet --filter driver=virtualbox --filter state=Stopped`
+
 echo
-read -p "Do you have already created doker virtualBox machines? " -n 1 -r
-echo
-if [[ $REPLY =~ ^[nN]$ ]]; then
+echo "Checking for Docker virtualBox machines.. "
+
+if [[ $MACHINES_CREATED_NUM == 0 ]]; then
   # PLEASE WAIT
   for i in 1 2; do
     docker-machine create -d virtualbox --virtualbox-cpu-count 2 swarm-$i
   done
-else
-  # OR if they have been already created
-  for i in 1 2; do
-      docker-machine start swarm-$i
+else    # if they have been already created
+  for machine in "$MACHINES_STOPPED"; do
+      docker-machine start $machine
   done
+
+  export MANAGER_IP=$(docker-machine ip swarm-1):2377
+  docker-machine env swarm-1
+  eval $(docker-machine env swarm-1)
+  echo "The machines are already configured. Exiting.."
+  exit 0
 fi
 
 # to force machine ip settings
@@ -154,6 +118,8 @@ docker-machine ls
 
 # Connect shell to the manager machine
 eval $(docker-machine env swarm-1)
+
+
 
 # Promote first machine as manager
 docker swarm init --advertise-addr $(docker-machine ip swarm-1)
@@ -171,8 +137,8 @@ done
 
 echo ">> The swarm cluster is up and running"
 
-export MANAGER_IP=$(docker-machine ip swarm-1):2377
 
+export MANAGER_IP=$(docker-machine ip swarm-1):2377
 docker-machine env swarm-1
 
 
@@ -202,20 +168,24 @@ done
 ## ----------------------------------
 ###########################################################################
 
+docker network create --attachable backend
+docker network create -d overlay --attachable proxy
+docker network create -d overlay --attachable monitor
 
 ###########################################################################
 ### PROXY 
 #   is used as single access point to the cluster
 #   Run before the exporters (ha-proxy)
-docker network create -d overlay --attachable proxy
-docker network create -d overlay --attachable monitor
 
-docker stack deploy -c config/stack/docker-flow-proxy-mem.yml proxy
-
+# docker stack deploy -c config/stack/docker-flow-proxy-mem.yml proxy
+docker stack deploy -c ./config/stack/proxy.composer.yml proxy
 echo
+sleep 2
 date +%H:%M
 docker service ls
 echo
+# cat /etc/nginx/network_internal.conf 
+
 
 
 ###########################################################################
@@ -287,6 +257,7 @@ docker stack deploy -c config/stack/docker-monitoring-complete.yml monitor
 docker stack ps monitor
 echo
 
+
 ###########################################################################
 #     JENKINS
 # ----------------------------------------------
@@ -317,7 +288,25 @@ echo
 ###########################################################################
 #     NODE SERVER
 # ----------------------------------------------
-#  TODO: prometeus functions: https://github.com/siimon/prom-client
+
+####------ BUILD nodejs server
+cp config/stack/node-multistage.dockerfile . && \
+    docker build --no-cache --tag=server -f node-multistage.dockerfile --force-rm . && \
+    rm config/stack/node-multistage.dockerfile 
+
+# ---- PUBLISH after a build -----
+docker login --username ${DOCKER_HUB_USERNAME}
+docker tag server ${DOCKER_HUB_USERNAME}/node-server:prd
+docker push ${DOCKER_HUB_USERNAME}/node-server:prd
+
+# ------------------------------------------------------------- #
+# ---- initialize the stack manager  ----
+docker swarm init
+
+# ---- use this also to redeploy after a change (eg: scaling)
+# docker stack deploy -c config/stack/docker-compose-swarm.yml phoenix
+# docker stack services phoenix
+
 docker stack deploy -c config/stack/docker-compose-swarm.yml phoenix
 
 
@@ -329,12 +318,12 @@ docker stack deploy -c config/stack/docker-compose-swarm.yml phoenix
 
 echo "Prometeus alert screen at: http://$(docker-machine ip swarm-1)/monitor/alerts"
 
+
 # ------ Mongo DB backup ------
 # TODO: Jenkins scheduler
 # docker run --rm --link mongo:mongo --network backend -v bkp:/backup mongo bash -c 'mongodump --out /backup --host mongo:27017'
 # to restore the backup
 # docker run --rm --link mongo:mongo --network backend -v /root:/backup mongo bash -c 'mongorestore /backup --host mongo:27017'
-
 
 
 ## ---------------------------------------------

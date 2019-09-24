@@ -8,14 +8,11 @@ services:
       - 50000:50000
     environment:
       - JENKINS_OPTS="--prefix=/jenkins"
-    networks:
-      - proxy
-      - default
-      - monitor
-    # extra_hosts:
-    # - "github.com:54.72.52.58"
-    # volumes:
-    #   - ../resolv.conf:/etc/resolv.conf
+      - VIRTUAL_HOST=jenkinsMaster.local
+    # networks:
+    #   - proxy
+    #   - default
+    #   - monitor
     deploy:
       labels:
         - com.df.notify=true
@@ -37,10 +34,13 @@ services:
       - USER_NAME_SECRET=/run/secrets/${JENKINS_USER_SECRET:-jenkins-user}
       - PASSWORD_SECRET=/run/secrets/${JENKINS_PASS_SECRET:-jenkins-pass}
       - COMMAND_OPTIONS=-master http://master:8080/jenkins -labels 'prod' -executors 2
-    networks:
-      - proxy
-      - default
-      - monitor
+      - VIRTUAL_HOST=jenkins.local
+    # networks:
+    #   - proxy
+    #   - default
+    #   - monitor
+    ports:
+      - 8081:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # - ../resolv.conf:/etc/resolv.conf

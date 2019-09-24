@@ -4,9 +4,9 @@ services:
 
   ha-proxy:
     image: quay.io/prometheus/haproxy-exporter:${HA_PROXY_TAG:-latest}
-    networks:
-      - proxy
-      - monitor
+    # networks:
+    #   - proxy
+    #   - monitor
     ports:
       - 9101:9101
     deploy:
@@ -18,8 +18,8 @@ services:
 
   cadvisor:
     image: google/cadvisor
-    networks:
-      - monitor
+    # networks:
+    #   - monitor
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run
@@ -36,8 +36,8 @@ services:
 
   node-exporter:
     image: basi/node-exporter
-    networks:
-      - monitor
+    # networks:
+    #   - monitor
     environment:
       - HOST_HOSTNAME=/etc/host_hostname
     volumes:
@@ -68,14 +68,15 @@ services:
   monitor:
     image: dockerflow/docker-flow-monitor
     environment:
+      - VIRTUAL_HOST=monitor.local
       - LISTENER_ADDRESS=swarm-listener
       - GLOBAL_SCRAPE_INTERVAL=${SCRAPE_INTERVAL:-10s}
       - ARG_WEB_ROUTE-PREFIX=/monitor
       - ARG_WEB_EXTERNAL-URL=http://${DOMAIN:-localhost}/monitor
       - ARG_ALERTMANAGER_URL=http://alert-manager:9093
-    networks:
-      - proxy
-      - monitor
+    # networks:
+    #   - proxy
+    #   - monitor
     ports:
       - 9090:9090
     deploy:
@@ -94,8 +95,8 @@ services:
 
   alert-manager:
     image: prom/alertmanager
-    networks:
-      - monitor
+    # networks:
+    #   - monitor
     secrets:
       - alert_manager_config
     depends_on:
@@ -105,8 +106,8 @@ services:
 
   swarm-listener:
     image: dockerflow/docker-flow-swarm-listener
-    networks:
-      - monitor
+    # networks:
+    #   - monitor
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:

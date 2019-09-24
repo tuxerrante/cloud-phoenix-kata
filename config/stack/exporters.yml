@@ -4,9 +4,9 @@ services:
 
   ha-proxy:
     image: quay.io/prometheus/haproxy-exporter:${HA_PROXY_TAG:-latest}
-    networks:
-      - proxy
-      - monitor
+    # networks:
+    #   - proxy
+    #   - monitor
     deploy:
       labels:
         - com.df.notify=true
@@ -15,8 +15,8 @@ services:
 
   cadvisor:
     image: google/cadvisor
-    networks:
-      - monitor
+    # networks:
+    #   - monitor
     volumes:
       - /:/rootfs
       - /var/run:/var/run
@@ -30,8 +30,8 @@ services:
 
   node-exporter:
     image: basi/node-exporter
-    networks:
-      - monitor
+    # networks:
+    #   - monitor
     environment:
       - HOST_HOSTNAME=/etc/host_hostname
     volumes:
