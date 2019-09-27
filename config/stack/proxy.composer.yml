@@ -11,7 +11,7 @@ services:
     #   - default
     #   - monitor
     volumes:
-      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - /var/run/docker.sock:/tmp/docker.sock
     #  - ./config/nginx-network-internal.conf:/etc/nginx/network_internal.conf
     # environment:
     #   - DOCKER_HOST=${MANAGER_IP}

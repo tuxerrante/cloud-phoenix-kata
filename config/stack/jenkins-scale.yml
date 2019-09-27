@@ -8,10 +8,10 @@ services:
       - 50000:50000
     environment:
       - JENKINS_OPTS="--prefix=/jenkins"
-      - VIRTUAL_HOST=jenkinsMaster.local
-    # networks:
+      - VIRTUAL_HOST=jenkinsMaster.jenkins
+    networks:
     #   - proxy
-    #   - default
+      - default
     #   - monitor
     deploy:
       labels:
@@ -29,18 +29,16 @@ services:
       - jenkins-pass
 
   agent:
-    image: vfarcic/jenkins-swarm-agent
+    image: vfarcic/jenkins-swarm-agent:19.03.15-2
     environment:
       - USER_NAME_SECRET=/run/secrets/${JENKINS_USER_SECRET:-jenkins-user}
       - PASSWORD_SECRET=/run/secrets/${JENKINS_PASS_SECRET:-jenkins-pass}
       - COMMAND_OPTIONS=-master http://master:8080/jenkins -labels 'prod' -executors 2
-      - VIRTUAL_HOST=jenkins.local
-    # networks:
+      - VIRTUAL_HOST=jenkins.jenkins
+    networks:
     #   - proxy
-    #   - default
+      - default
     #   - monitor
-    ports:
-      - 8081:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # - ../resolv.conf:/etc/resolv.conf
@@ -62,6 +60,8 @@ networks:
     external: true
   monitor:
     external: true
+  default:
+    external: false
 
 secrets:
   jenkins-user:

@@ -36,12 +36,9 @@ http://192.168.99.104:8080/containers/
 
 
 #### JENKINS
-1.  cloud-phoenix-kata$ cp -r config/ ./swarm-1/ &&  docker-machine ssh swarm-1
-
-2.  docker@swarm-1:~$ docker stack deploy -c config/stack/jenkins-scale.yml jenkins
-
-3.  docker@swarm-1:~$ docker service ps --no-trunc jenkins_agent -f desired-state=running
-    docker@swarm-1:~$ docker service ps --no-trunc jenkins_master -f desired-state=running
+$ docker stack deploy -c config/stack/jenkins-scale.yml jenkins
+docker@swarm-1:~$ docker service ps --no-trunc jenkins_agent -f desired-state=running
+docker@swarm-1:~$ docker service ps --no-trunc jenkins_master -f desired-state=running
 
 docker@swarm-1:~$ docker exec -it jenkins_agent.1.tdzotcz7q3yx2agbwpn4d2w7t ping github.com
 docker@swarm-1:~$ docker exec -it jenkins_agent.1.ba5s1utit69omctrx2uwt33c2 ipaddr | grep inet
@@ -61,6 +58,10 @@ docker service ps --filter desired-state=Running jenkins_agent
 
 
 
+###############################################################################
+NGINX PROXY 
+
+"CMD [\"forego\" \"start\" \"-r\"]"
 
 
 

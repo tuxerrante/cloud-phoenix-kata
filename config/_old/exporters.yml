@@ -17,6 +17,8 @@ services:
     image: google/cadvisor
     # networks:
     #   - monitor
+    ports:
+      - 9102:8080
     volumes:
       - /:/rootfs
       - /var/run:/var/run
@@ -26,7 +28,7 @@ services:
       mode: global
       labels:
         - com.df.notify=true
-        - com.df.scrapePort=8080
+        - com.df.scrapePort=9102
 
   node-exporter:
     image: basi/node-exporter
@@ -39,6 +41,8 @@ services:
       - /sys:/host/sys
       - /:/rootfs
       - /etc/hostname:/etc/host_hostname
+    ports:
+      - 9100:8080
     deploy:
       mode: global
       labels:

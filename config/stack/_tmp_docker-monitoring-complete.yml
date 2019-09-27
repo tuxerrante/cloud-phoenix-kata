@@ -2,6 +2,81 @@ version: "3.2"
 
 services:
 
+  ################ JENKINS #################################
+  master:
+    image: vfarcic/jenkins:scale
+    ports:
+      - 50000:50000
+    environment:
+      - JENKINS_OPTS="--prefix=/jenkins"
+      - VIRTUAL_HOST=jenkinsMaster.jenkins
+    #networks:
+    #   - proxy
+    #  - default
+    #   - monitor
+    deploy:
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.servicePath=/jenkins
+        - com.df.port=8080
+      resources:
+        reservations:
+          memory: 600M
+        limits:
+          memory: 800M
+    secrets:
+      - jenkins-user
+      - jenkins-pass
+
+  agent:
+    image: vfarcic/jenkins-swarm-agent:19.03.15-2
+    environment:
+      - USER_NAME_SECRET=/run/secrets/${JENKINS_USER_SECRET:-jenkins-user}
+      - PASSWORD_SECRET=/run/secrets/${JENKINS_PASS_SECRET:-jenkins-pass}
+      - COMMAND_OPTIONS=-master http://master:8080/jenkins -labels 'prod' -executors 2
+      - VIRTUAL_HOST=jenkins.jenkins
+    # networks:
+    #   - proxy
+    #   - default
+    #   - monitor
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # - ../resolv.conf:/etc/resolv.conf
+    secrets:
+      - jenkins-user
+      - jenkins-pass
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+      resources:
+        reservations:
+          memory: 150M
+        limits:
+          memory: 300M
+
+
+  ################ PROXY #################################
+  proxy:
+    image: dockerflow/docker-flow-proxy:${TAG:-latest}
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - LISTENER_ADDRESS=swarm-listener
+      - MODE=swarm
+      - CONNECTION_MODE=${CONNECTION_MODE:-http-server-close}
+      - STATS_USER=admin
+      - STATS_PASS=admin
+    deploy:
+      resources:
+        reservations:
+          memory: 10M
+        limits:
+          memory: 20M
+
+
+  ################ SCRAPERS #################################
   ha-proxy:
     image: quay.io/prometheus/haproxy-exporter:${HA_PROXY_TAG:-latest}
     # networks:
@@ -65,6 +140,7 @@ services:
     command: '--path.procfs="/host/proc" --path.sysfs="/host/sys" --collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)" --collector.textfile.directory="/etc/node-exporter/" --collector.conntrack --collector.diskstats --collector.entropy --collector.filefd --collector.filesystem --collector.loadavg --collector.mdadm --collector.meminfo --collector.netdev --collector.netstat --collector.stat --collector.textfile --collector.time --collector.vmstat --collector.ipvs'
 
 
+  ################ PROMETHEUS #################################
   monitor:
     image: dockerflow/docker-flow-monitor
     environment:
@@ -122,12 +198,20 @@ services:
         limits:
           memory: 10M
 
+
 networks:
   monitor:
     external: true
   proxy:
     external: true
+  default:
+
 
 secrets:
   alert_manager_config:
+    external: true
+
+  jenkins-user:
+    external: true
+  jenkins-pass:
     external: true
